@@ -1,0 +1,25 @@
+const _ = require("lodash");
+const { generateApiForTest } = require("../../helpers/generateApiForTest");
+const { resolve } = require("path");
+const validateGeneratedModule = require("../../helpers/validateGeneratedModule");
+const createSchemaInfos = require("../../helpers/createSchemaInfos");
+
+const schemas = createSchemaInfos({ absolutePathToSchemas: resolve(__dirname, "./") });
+
+schemas.forEach(({ absolutePath, apiFileName, Exception }) => {
+  generateApiForTest({
+    testName: "partialDefaultTemplate test",
+    silent: true,
+    name: apiFileName,
+    input: absolutePath,
+    output: resolve(__dirname, "./"),
+    // because this script was called from package.json folder
+    templates: "./tests/spec/partialDefaultTemplate/spec_templates",
+  }).then((output) => {
+    if (!_.includes(_.get(output.files, "[0].content"), "/** PARTIAL TEMPLATES */")) {
+      throw new Exception("Failed, spec templates are not applied");
+    }
+
+    validateGeneratedModule(resolve(__dirname, `./${apiFileName}`));
+  });
+});
